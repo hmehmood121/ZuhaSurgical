@@ -1,0 +1,426 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useCart } from "../context/CartContext"
+import Image from "next/image"
+import { CreditCard, Truck, MapPin } from "lucide-react"
+import toast from "react-hot-toast"
+
+export default function CheckoutPage() {
+  const router = useRouter()
+  const { cartItems, totalPrice, getDeliveryFee, getFinalTotal, clearCart } = useCart()
+
+  const [orderDetails, setOrderDetails] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    postalCode: "",
+  })
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const deliveryFee = getDeliveryFee()
+  const finalTotal = getFinalTotal()
+
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      router.push("/cart")
+    }
+  }, [cartItems, router])
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setOrderDetails((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
+  }
+
+  const handlePaymentChange = (e) => {
+    setSelectedPaymentMethod(e.target.value)
+  }
+
+  const validateForm = () => {
+    const required = ["name", "email", "phone", "address", "city"]
+    for (const field of required) {
+      if (!orderDetails[field].trim()) {
+        toast.error(`Please fill in ${field}`)
+        return false
+      }
+    }
+
+    if (!selectedPaymentMethod) {
+      toast.error("Please select a payment method")
+      return false
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(orderDetails.email)) {
+      toast.error("Please enter a valid email address")
+      return false
+    }
+
+    return true
+  }
+
+  const handleCheckout = async () => {
+    if (!validateForm()) return
+
+    setIsSubmitting(true)
+    console.log("🛒 Starting checkout process...")
+
+    try {
+      // Prepare order data
+      const orderData = {
+        orderDetails,
+        paymentMethod: selectedPaymentMethod,
+        cartItems,
+        subtotal: totalPrice,
+        deliveryFee,
+        total: finalTotal,
+        orderDate: new Date().toISOString(),
+        orderId: `ZS-${Date.now()}`,
+      }
+
+      console.log("📦 Prepared order:", orderData.orderId)
+
+      // Show loading toast
+      const loadingToast = toast.loading("Processing your order...")
+
+      // Make API request with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+      const response = await fetch("/api/send-order-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+      toast.dismiss(loadingToast)
+
+      console.log("📡 Response status:", response.status)
+
+      // Get response as text first to debug
+      const responseText = await response.text()
+      console.log("📄 Raw response:", responseText.substring(0, 200))
+
+      // Try to parse as JSON
+      let result
+      try {
+        result = JSON.parse(responseText)
+        console.log("📋 Parsed result:", result)
+      } catch (parseError) {
+        console.error("❌ Failed to parse response:", parseError)
+        console.error("Full response:", responseText)
+        throw new Error("Server returned an invalid response. Please try again.")
+      }
+
+      // Check if successful
+      if (result.success) {
+        console.log("✅ Order successful!")
+
+        // Clear cart
+        clearCart()
+
+        // Show success message
+        toast.success("🎉 Order placed successfully!")
+
+        // Redirect after a short delay
+        setTimeout(() => {
+          router.push(`/order-success?orderId=${orderData.orderId}`)
+        }, 1500)
+      } else {
+        throw new Error(result.message || "Failed to place order")
+      }
+    } catch (error) {
+      console.error("❌ Checkout error:", error)
+
+      if (error.name === "AbortError") {
+        toast.error("⏱️ Request timed out. Please try again.")
+      } else if (error.message.includes("Failed to fetch")) {
+        toast.error("🌐 Network error. Please check your connection.")
+      } else {
+        toast.error(`❌ ${error.message}`)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p>Redirecting to cart...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Checkout Form */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <MapPin size={20} />
+              Delivery Information
+            </h2>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Enter your full name"
+                  value={orderDetails.name}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  value={orderDetails.email}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Enter your phone number"
+                  value={orderDetails.phone}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  placeholder="Enter your complete address"
+                  value={orderDetails.address}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  placeholder="Enter your city"
+                  value={orderDetails.city}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code (Optional)</label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  placeholder="Enter postal code"
+                  value={orderDetails.postalCode}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <CreditCard size={20} />
+              Payment Method
+            </h2>
+
+            <p className="text-sm text-green-600 mb-4">💡 Free Delivery on Bank Transfer or JazzCash Transfer</p>
+
+            <div className="space-y-3 mb-6">
+              <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="cashOnDelivery"
+                  checked={selectedPaymentMethod === "cashOnDelivery"}
+                  onChange={handlePaymentChange}
+                  className="mr-3"
+                />
+                <span className="font-medium">Cash on Delivery</span>
+              </label>
+
+              <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="bankTransfer"
+                  checked={selectedPaymentMethod === "bankTransfer"}
+                  onChange={handlePaymentChange}
+                  className="mr-3"
+                />
+                <span className="font-medium">Bank Transfer</span>
+              </label>
+
+              <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="jazzcash"
+                  checked={selectedPaymentMethod === "jazzcash"}
+                  onChange={handlePaymentChange}
+                  className="mr-3"
+                />
+                <span className="font-medium">JazzCash</span>
+              </label>
+            </div>
+
+            {/* Payment Details */}
+            {selectedPaymentMethod === "bankTransfer" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="font-bold text-blue-900 mb-2">Bank Transfer Details</h4>
+                <div className="text-blue-800 space-y-1">
+                  <p>
+                    <strong>Account Title:</strong> Muhammad Bilal Ameen
+                  </p>
+                  <p>
+                    <strong>Account Number:</strong> 00270981017134019
+                  </p>
+                  <p>
+                    <strong>Branch Name:</strong> Bank Al-Habib
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {selectedPaymentMethod === "jazzcash" && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+                <h4 className="font-bold text-purple-900 mb-2">JazzCash Details</h4>
+                <div className="text-purple-800 space-y-1">
+                  <p>
+                    <strong>Account Title:</strong> Muhammad Bilal Ameen
+                  </p>
+                  <p>
+                    <strong>Account Number:</strong> 03005702979
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                onClick={handleCheckout}
+                disabled={isSubmitting}
+                className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:transform-none"
+              >
+                {isSubmitting ? "Processing Order..." : "Place Order"}
+              </button>
+
+              <button
+                onClick={() => router.push("/cart")}
+                disabled={isSubmitting}
+                className="px-6 py-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Back to Cart
+              </button>
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="bg-white rounded-lg shadow-md p-6 h-fit">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+
+            {/* Cart Items */}
+            <div className="space-y-4 mb-6 max-h-60 overflow-y-auto">
+              {cartItems.map((item) => (
+                <div key={item.key} className="flex items-center space-x-3">
+                  <div className="relative w-12 h-12 flex-shrink-0">
+                    <Image
+                      src={item.images?.[0] || "/placeholder.svg"}
+                      alt={item.productName}
+                      fill
+                      className="object-cover rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-gray-900 truncate">{item.productName}</h4>
+                    <div className="text-xs text-gray-500">
+                      {item.selectedSize && <span>Size: {item.selectedSize} </span>}
+                      {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                    </div>
+                    <p className="text-sm text-green-600 font-semibold">
+                      PKR {item.price} × {item.quantity}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Totals */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-semibold">PKR {totalPrice}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600 flex items-center gap-1">
+                  <Truck size={16} />
+                  Delivery
+                </span>
+                <span className={`font-semibold ${deliveryFee === 0 ? "text-green-600" : ""}`}>
+                  {deliveryFee === 0 ? "FREE" : `PKR ${deliveryFee}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-3">
+                <span>Total</span>
+                <span className="text-green-600">PKR {finalTotal}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
