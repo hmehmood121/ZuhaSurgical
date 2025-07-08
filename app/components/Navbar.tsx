@@ -252,14 +252,6 @@ export default function Navbar() {
                   </span>
                 )}
               </Link>
-
-              {/* User Account */}
-              <Link
-                href="/account"
-                className="p-2 rounded-md text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
-              >
-                <User size={20} />
-              </Link>
             </div>
           </div>
         </div>
