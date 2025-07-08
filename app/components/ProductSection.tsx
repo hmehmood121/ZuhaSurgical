@@ -2,15 +2,31 @@
 
 import ProductCard from "./ProductCard"
 import Link from "next/link"
+import type { ReactNode } from "react"
 
-export default function ProductSection({ title, products, categoryName, showAll = false }) {
+interface Product {
+  status: string
+  slug?: string
+  _id?: string
+  // Add any other fields used by ProductCard if needed
+  [key: string]: any
+}
+
+interface ProductSectionProps {
+  title: string
+  products: Product[]
+  categoryName?: string
+  showAll?: boolean
+}
+
+export default function ProductSection({ title, products, categoryName, showAll = false }: ProductSectionProps) {
   // Filter active products
-  const activeProducts = products.filter((product) => product.status === "active")
+  const activeProducts = products.filter((product: Product) => product.status === "active")
 
   return (
     <section className="py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
           <div>
             <h2 className="text-3xl font-bold text-gray-800 mb-2">{title}</h2>
             <p className="text-gray-600">
@@ -22,7 +38,7 @@ export default function ProductSection({ title, products, categoryName, showAll 
           {showAll && categoryName && activeProducts.length > 4 && (
             <Link
               href={`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`}
-              className="btn-secondary flex items-center gap-2 hover:gap-3 transition-all duration-300"
+              className="btn-secondary flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base font-medium"
             >
               View All ({activeProducts.length})
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +52,7 @@ export default function ProductSection({ title, products, categoryName, showAll 
           {activeProducts.length > 0 ? (
             activeProducts
               .slice(0, 4) // Always show only first 4 products on home page
-              .map((product, index) => (
+              .map((product: Product, index: number) => (
                 <div
                   key={product.slug || product._id}
                   className="animate-slide-up"

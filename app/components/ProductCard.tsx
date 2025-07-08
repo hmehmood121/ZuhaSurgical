@@ -5,7 +5,20 @@ import Link from "next/link"
 import { ShoppingCart, Heart, Star } from "lucide-react"
 import { useState } from "react"
 
-export default function ProductCard({ product }) {
+interface Product {
+  status: string
+  slug?: string
+  _id?: string
+  productName: string
+  price: number | string
+  oldPrice?: number | string
+  images?: string[]
+  shortDescription?: string
+  // Add any other fields as needed
+  [key: string]: any
+}
+
+export default function ProductCard({ product }: { product: Product }) {
   const [isWishlisted, setIsWishlisted] = useState(false)
 
   return (
@@ -59,15 +72,20 @@ export default function ProductCard({ product }) {
           <span className="text-sm text-gray-500 ml-1">(20)</span>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-2 mt-2">
           <div className="flex items-center gap-2">
-            {product.oldPrice && <span className="text-gray-400 line-through text-sm">PKR {product.oldPrice}</span>}
-            <span className="text-green-600 font-bold text-lg">PKR {product.price}</span>
+            {product.oldPrice && (
+              <span className="text-gray-400 line-through text-sm whitespace-nowrap">
+                PKR {product.oldPrice}
+              </span>
+            )}
+            <span className="text-green-600 font-bold text-lg whitespace-nowrap">
+              PKR {product.price}
+            </span>
           </div>
-
           <Link
             href={`/product/${product.slug}`}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105"
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-all duration-300 transform hover:scale-105 w-full text-center whitespace-nowrap"
           >
             View Details
           </Link>
