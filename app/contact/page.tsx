@@ -2,6 +2,10 @@
 
 import { useState } from "react"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "../../firebase"
+import toast from "react-hot-toast"
+import type React from "react"
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -10,16 +14,28 @@ export default function Contact() {
     subject: "",
     message: "",
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log("Form submitted:", formData)
-    alert("Thank you for your message! We will get back to you soon.")
-    setFormData({ name: "", email: "", subject: "", message: "" })
+    setLoading(true)
+    try {
+      await addDoc(collection(db, "contactMessages"), {
+        ...formData,
+        timestamp: serverTimestamp(),
+      })
+      setFormData({ name: "", email: "", subject: "", message: "" })
+      toast.success("Thank you for your message! We will get back to you soon.")
+    } catch (err) {
+      toast.error("Failed to send message. Please try again later.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -49,9 +65,11 @@ export default function Contact() {
                 <div>
                   <h3 className="font-semibold text-gray-900">Address</h3>
                   <p className="text-gray-600">
-                  Zuha Surgical, 123 Medical Equipment Madina Town,
+                  Choudhary house ,Airport Road, mino khan home street
+
                     <br />
-                    Khanpur, Pakistan
+                    Khanpur, District Rahim Yar Khan
+Postal code 64100
                   </p>
                 </div>
               </div>
@@ -98,7 +116,7 @@ export default function Contact() {
           <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
             <form onSubmit={handleSubmit} className="bg-gray-50 p-8 rounded-2xl">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
-
+              {/* Remove success and error inline messages, only show toast */}
               <div className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -166,9 +184,10 @@ export default function Contact() {
 
                 <button
                   type="submit"
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                  disabled={loading}
                 >
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
                 </button>
               </div>
             </form>

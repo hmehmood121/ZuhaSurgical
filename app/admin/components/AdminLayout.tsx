@@ -20,6 +20,7 @@ import {
   BarChart3,
   Users,
   Bell,
+  Mail,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { User as FirebaseUser } from "firebase/auth"
@@ -60,6 +61,12 @@ const sidebarItems = [
     href: "/admin/announcements",
     icon: Megaphone,
     description: "Site announcements"
+  },
+  {
+    name: "Contact Messages",
+    href: "/admin/contact-messages",
+    icon: Mail,
+    description: "View contact form messages"
   },
   // {
   //   name: "Analytics",

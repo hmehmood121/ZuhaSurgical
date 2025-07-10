@@ -82,7 +82,7 @@ export default function OrderSuccessPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={16} />
-                <span>+1 (555) 123-4567</span>
+                <span>+92 321 5702979</span>
               </div>
             </div>
           </div>

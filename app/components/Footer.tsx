@@ -94,7 +94,9 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <MapPin size={18} className="text-green-400 flex-shrink-0" />
-                <span className="text-gray-400">Zuha Surgical, 123 Medical Equipment Madina Town, Khanpur, Pakistan</span>
+                <span className="text-gray-400">Choudhary house ,Airport Road, mino khan home street,Khanpur District Rahim Yar Khan
+Postal code 64100
+</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone size={18} className="text-green-400 flex-shrink-0" />
