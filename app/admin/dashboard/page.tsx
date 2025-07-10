@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, Timestamp } from "firebase/firestore"
 import { db } from "../../../firebase"
 import AdminLayout from "../components/AdminLayout"
 import {
@@ -34,10 +34,11 @@ export default function AdminDashboard() {
   })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<'daily' | 'monthly' | 'yearly' | 'all'>('all')
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [filter])
 
   const fetchDashboardData = async () => {
     try {
@@ -45,7 +46,32 @@ export default function AdminDashboard() {
 
       // Fetch orders
       const ordersSnapshot = await getDocs(collection(db, "orders"))
-      const orders = ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as any[]
+      let orders = ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as any[]
+
+      // Filter orders by date
+      const now = new Date()
+      let filteredOrders = orders
+      if (filter !== 'all') {
+        filteredOrders = orders.filter(order => {
+          const dateVal = order.createdAt || order.orderDate
+          let orderDate: Date
+          if (dateVal instanceof Timestamp && dateVal.toDate) {
+            orderDate = dateVal.toDate()
+          } else if (typeof dateVal === 'string') {
+            orderDate = new Date(dateVal)
+          } else {
+            orderDate = new Date(dateVal)
+          }
+          if (filter === 'daily') {
+            return orderDate.toDateString() === now.toDateString()
+          } else if (filter === 'monthly') {
+            return orderDate.getFullYear() === now.getFullYear() && orderDate.getMonth() === now.getMonth()
+          } else if (filter === 'yearly') {
+            return orderDate.getFullYear() === now.getFullYear()
+          }
+          return true
+        })
+      }
 
       // Fetch products
       const productsSnapshot = await getDocs(collection(db, "products"))
@@ -56,18 +82,18 @@ export default function AdminDashboard() {
       const categories = categoriesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as any[]
 
       // Calculate stats
-      const totalRevenue = orders.reduce((sum, order) => sum + (Number.parseFloat(order.total) || 0), 0)
-      const pendingOrders = orders.filter((order) => order.status === "pending").length
-      const shippedOrders = orders.filter((order) => order.status === "Shipped").length
-      const deliveredOrders = orders.filter((order) => order.status === "Delivered").length
+      const totalRevenue = filteredOrders.reduce((sum, order) => sum + (Number.parseFloat(order.total) || 0), 0)
+      const pendingOrders = filteredOrders.filter((order) => order.status === "pending").length
+      const shippedOrders = filteredOrders.filter((order) => order.status === "Shipped").length
+      const deliveredOrders = filteredOrders.filter((order) => order.status === "Delivered").length
 
       // Get recent orders (last 10)
-      const sortedOrders = orders
+      const sortedOrders = filteredOrders
         .sort((a, b) => new Date(b.createdAt || b.orderDate).getTime() - new Date(a.createdAt || a.orderDate).getTime())
         .slice(0, 10)
 
       setStats({
-        totalOrders: orders.length,
+        totalOrders: filteredOrders.length,
         totalRevenue,
         totalProducts: products.length,
         totalCategories: categories.length,
@@ -142,6 +168,16 @@ export default function AdminDashboard() {
             <p className="text-gray-600">Monitor your store's performance and recent activity</p>
           </div>
           <div className="flex items-center gap-3 mt-4 sm:mt-0">
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            >
+              <option value="all">All Time</option>
+              <option value="daily">Daily</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-200">
               <Calendar size={16} className="text-gray-500" />
               <span className="text-sm font-medium text-gray-700">

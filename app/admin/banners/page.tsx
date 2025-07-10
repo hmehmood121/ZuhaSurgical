@@ -75,6 +75,7 @@ export default function BannersPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Banner Images</h1>
         </div>
+        <div className="mb-2 text-gray-500 text-sm text-center">Recommended size: <span className="font-semibold">1920 x 700 px</span></div>
         <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center gap-4">
           <input
             type="file"
