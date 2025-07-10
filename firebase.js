@@ -5,12 +5,12 @@ import { getAuth } from "firebase/auth"
 import { getStorage } from "firebase/storage"
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAC-XXLBMRKIJqeZChgLImYv9blpRIxx2k",
-  authDomain: "zuha-bfae4.firebaseapp.com",
-  projectId: "zuha-bfae4",
-  storageBucket: "zuha-bfae4.appspot.com",
-  messagingSenderId: "63851762522",
-  appId: "1:63851762522:web:ddf3f4f5a78af6f8de9963",
+  apiKey: NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: NEXT_PUBLIC_AUTH_DOMAIN,
+  projectId: NEXT_PUBLIC_PROJECT_ID,
+  storageBucket: NEXT_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: NEXT_PUBLIC_MESSAGING_ID,
+  appId: NEXT_PUBLUC_APP_ID
 }
 
 // Initialize Firebase
