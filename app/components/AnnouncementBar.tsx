@@ -55,7 +55,7 @@ export default function AnnouncementBar() {
             setAnnouncement(getFallbackAnnouncement())
           }
         } else {
-          console.log("No announcements collection found, using fallback")
+          console.log("No announcements collection foundd, using fallback")
           setAnnouncement(getFallbackAnnouncement())
         }
       } catch (error) {
