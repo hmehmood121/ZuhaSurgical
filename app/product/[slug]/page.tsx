@@ -8,8 +8,8 @@ import { collection, getDocs, query, where } from "firebase/firestore"
 import { db } from "../../../firebase"
 import ProductSection from "../../components/ProductSection"
 import { useCart } from "../../context/CartContext"
-import toast from "react-hot-toast"
 import { useMetaTracking } from "../../../hooks/useMetaTracking"
+import toast from "react-hot-toast"
 
 export default function ProductDetails() {
   const params = useParams()
@@ -106,69 +106,28 @@ export default function ProductDetails() {
     return true
   }
 
-  const handleAddToCart = async (e) => {
-    e.preventDefault() // Prevent default button behavior
-    e.stopPropagation() // Stop event propagation to prevent other listeners
-
-    console.log("🛒 Add to Cart button clicked!")
-    console.log("🔍 Product:", product?.productName)
-    console.log("🔍 Quantity:", quantity)
-
+  const handleAddToCart = () => {
     if (!validateSelections()) return
 
-    try {
-      console.log("✅ Validation passed, adding to cart...")
+    addToCart(product, quantity, selectedSize, selectedColor)
 
-      // Add to cart first
-      addToCart(product, quantity, selectedSize, selectedColor)
-      console.log("✅ Added to cart successfully")
-
-      // Track add to cart event with proper error handling
-      console.log("📊 Starting AddToCart tracking...")
-      await trackAddToCart(
-        product.slug || product.productName,
-        product.productName,
-        Number.parseFloat(product.price),
-        quantity,
-      )
-
-      console.log("✅ AddToCart event tracked successfully")
-    } catch (error) {
-      console.error("❌ Error in handleAddToCart:", error)
-    }
+    // Track add to cart event
+    trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
   }
 
-  const handleBuyNow = async (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    console.log("🚀 Buy Now button clicked!")
-
+  const handleBuyNow = () => {
     if (!validateSelections()) return
 
-    try {
-      // Add to cart first
-      addToCart(product, quantity, selectedSize, selectedColor)
+    // Add to cart first
+    addToCart(product, quantity, selectedSize, selectedColor)
 
-      // Track add to cart event
-      await trackAddToCart(
-        product.slug || product.productName,
-        product.productName,
-        Number.parseFloat(product.price),
-        quantity,
-      )
+    // Track add to cart event
+    trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
 
-      // Redirect to cart/checkout
-      router.push("/cart")
-      toast.success("Proceeding to checkout!")
-    } catch (error) {
-      console.error("❌ Error in handleBuyNow:", error)
-      // Still proceed to cart even if tracking fails
-      router.push("/cart")
-      toast.success("Proceeding to checkout!")
-    }
+    // Redirect to cart/checkout
+    router.push("/cart")
+    toast.success("Proceeding to checkout!")
   }
-
 
   const handleShare = async () => {
     const productUrl = `${window.location.origin}/product/${slug}`
@@ -354,8 +313,6 @@ export default function ProductDetails() {
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
-                data-testid="add-to-cart-button"
-                data-fb-skip-ogb="true" 
               >
                 <ShoppingCart size={20} />
                 Add to Cart
@@ -363,8 +320,6 @@ export default function ProductDetails() {
               <button
                 onClick={handleBuyNow}
                 className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
-                data-testid="buy-now-button"
-                data-fb-skip-ogb="true" 
               >
                 Buy Now
               </button>

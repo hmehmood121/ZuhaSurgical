@@ -60,10 +60,10 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Overlay buttons */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-        <button
+          <button
             onClick={handleQuickAddToCart}
             className="bg-white text-gray-800 p-3 rounded-full hover:bg-green-500 hover:text-white transition-colors duration-300 transform hover:scale-110"
-            data-fb-skip-ogb="true" 
+            data-fb-skip-ogb="true"
           >
             <ShoppingCart size={20} />
           </button>
@@ -105,13 +105,9 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="flex flex-col items-start gap-2 mt-2">
           <div className="flex items-center gap-2">
             {product.oldPrice && (
-              <span className="text-gray-400 line-through text-sm whitespace-nowrap">
-                PKR {product.oldPrice}
-              </span>
+              <span className="text-gray-400 line-through text-sm whitespace-nowrap">PKR {product.oldPrice}</span>
             )}
-            <span className="text-green-600 font-bold text-lg whitespace-nowrap">
-              PKR {product.price}
-            </span>
+            <span className="text-green-600 font-bold text-lg whitespace-nowrap">PKR {product.price}</span>
           </div>
           <Link
             href={`/product/${product.slug}`}

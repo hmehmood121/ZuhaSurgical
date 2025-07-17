@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "ZuhaSurgical - Premium Medical Equipment",
   description: "Your trusted source for high-quality medical and surgical equipments",
   icons: {
-    icon: {url: "/favicon.ico"},
+    icon: { url: "/favicon.ico" },
   },
 }
 
@@ -35,15 +35,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               'https://connect.facebook.net/en_US/fbevents.js');
               fbq('init', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
               fbq('track', 'PageView');
-                
-                // Disable automatic advanced matching and automatic event setup to prevent conflicts
-              fbq('set', 'autoConfig', false, '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
-              fbq('set', 'autoPixelOptOut', true); // This is another way to disable automatic event setup
-              
-              // Add debug logging
-              console.log('🔧 Meta Pixel initialized with ID:', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
-              console.log('🔧 fbq available:', typeof window.fbq !== 'undefined');
-              console.log('🔧 autoConfig set to false for pixel:', '${process.env.NEXT_PUBLIC_META_PIXEL_ID}');
             `,
           }}
         />

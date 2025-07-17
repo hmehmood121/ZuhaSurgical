@@ -6,16 +6,7 @@ import { metaAPI } from "../lib/meta-conversion-api"
 export const useMetaTracking = () => {
   // Track page view on mount
   useEffect(() => {
-    const trackPageView = async () => {
-      try {
-        await metaAPI.trackPageView()
-        console.log("✅ PageView tracked on mount")
-      } catch (error) {
-        console.error("❌ Error tracking PageView:", error)
-      }
-    }
-
-    trackPageView()
+    metaAPI.trackPageView()
   }, [])
 
   return {
