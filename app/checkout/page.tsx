@@ -6,10 +6,13 @@ import { useCart } from "../context/CartContext"
 import Image from "next/image"
 import { CreditCard, Truck, MapPin } from "lucide-react"
 import toast from "react-hot-toast"
+import { useMetaTracking } from "../../hooks/useMetaTracking"
+
 
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, totalPrice, getDeliveryFee, getFinalTotal, clearCart } = useCart()
+  const { trackInitiateCheckout, trackPurchase, trackLead } = useMetaTracking()
 
   const [orderDetails, setOrderDetails] = useState({
     name: "",
@@ -25,6 +28,19 @@ export default function CheckoutPage() {
 
   const deliveryFee = getDeliveryFee()
   const finalTotal = getFinalTotal()
+
+   // Track initiate checkout when component mounts
+   useEffect(() => {
+    if (cartItems.length > 0) {
+      const products = cartItems.map((item) => ({
+        id: item.slug || item.productName,
+        price: Number.parseFloat(item.price),
+        quantity: item.quantity,
+      }))
+
+      trackInitiateCheckout(products, finalTotal)
+    }
+  }, [cartItems, finalTotal, trackInitiateCheckout])
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -129,6 +145,19 @@ export default function CheckoutPage() {
       // Check if successful
       if (result.success) {
         console.log("✅ Order successful!")
+
+                // Track purchase event
+                const products = cartItems.map((item) => ({
+                  id: item.slug || item.productName,
+                  name: item.productName,
+                  price: Number.parseFloat(item.price),
+                  quantity: item.quantity,
+                }))
+        
+                await trackPurchase(orderData.orderId, products, finalTotal, orderDetails.email, orderDetails.phone)
+        
+                // Track lead event (customer provided contact info)
+                await trackLead(orderDetails.email, orderDetails.phone)
 
         // Clear cart
         clearCart()

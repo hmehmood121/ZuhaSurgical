@@ -9,12 +9,14 @@ import { db } from "../../../firebase"
 import ProductSection from "../../components/ProductSection"
 import { useCart } from "../../context/CartContext"
 import toast from "react-hot-toast"
+import { useMetaTracking } from "../../../hooks/useMetaTracking"
 
 export default function ProductDetails() {
   const params = useParams()
   const router = useRouter()
   const { slug } = params
   const { addToCart } = useCart()
+  const { trackViewContent, trackAddToCart } = useMetaTracking()
 
   const [product, setProduct] = useState(null)
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -37,6 +39,14 @@ export default function ProductDetails() {
         if (!querySnapshot.empty) {
           const productData = querySnapshot.docs[0].data()
           setProduct(productData)
+
+          // Track view content event
+          trackViewContent(
+            productData.slug,
+            productData.productName,
+            productData.category || "Unknown",
+            Number.parseFloat(productData.price),
+          )
         } else {
           console.error("Product not found")
         }
@@ -47,7 +57,7 @@ export default function ProductDetails() {
     }
 
     fetchProduct()
-  }, [slug])
+  }, [slug, trackViewContent])
 
   // Fetch related products for the "You may also like" section
   useEffect(() => {
@@ -100,6 +110,9 @@ export default function ProductDetails() {
     if (!validateSelections()) return
 
     addToCart(product, quantity, selectedSize, selectedColor)
+
+    // Track add to cart event
+    trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
   }
 
   const handleBuyNow = () => {
@@ -107,6 +120,9 @@ export default function ProductDetails() {
 
     // Add to cart first
     addToCart(product, quantity, selectedSize, selectedColor)
+
+    // Track add to cart event
+    trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
 
     // Redirect to cart/checkout
     router.push("/cart")

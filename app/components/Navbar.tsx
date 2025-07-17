@@ -8,6 +8,7 @@ import { db } from "../../firebase"
 import { useCart } from "../context/CartContext"
 import Image from "next/image"
 import type { FC } from "react"
+import { useMetaTracking } from "../../hooks/useMetaTracking"
 
 // Category and Suggestion types
 interface Category {
@@ -32,6 +33,8 @@ export default function Navbar() {
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const searchRef = useRef(null)
   const { totalQuantities } = useCart() as { totalQuantities: number };
+  
+  const { trackSearch } = useMetaTracking()
 
   // Fetch categories from Firebase
   useEffect(() => {
@@ -80,6 +83,9 @@ export default function Navbar() {
     setSearchQuery(searchText)
     if (searchText.trim().length > 2) {
       setIsSearching(true)
+
+      // Track search event
+      trackSearch(searchText.trim())
       try {
         const productsCollection = collection(db, "products")
         const querySnapshot = await getDocs(productsCollection)
