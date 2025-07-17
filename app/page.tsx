@@ -8,6 +8,8 @@ import HeroBanner from "./components/HeroBanner"
 import CategoryCircles from "./components/CategoryCircles"
 import ProductSection from "./components/ProductSection"
 import toast from "react-hot-toast"
+import MetaPixelEvents from "./components/MetaPixelEvents"
+import { useMetaTracking } from "../hooks/useMetaTracking"
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -15,6 +17,8 @@ export default function Home() {
   const [catProducts, setCatProducts] = useState({})
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+    // Initialize Meta tracking
+    useMetaTracking()
 
   // Fetch categories from Firebase Firestore
   useEffect(() => {
@@ -81,6 +85,7 @@ export default function Home() {
 
   return (
     <div className="animate-fade-in">
+       <MetaPixelEvents />
       <HeroBanner />
       <CategoryCircles categories={categories} />
 

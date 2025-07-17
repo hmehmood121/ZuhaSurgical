@@ -26,7 +26,7 @@ export default function Contact() {
         ...formData,
         timestamp: serverTimestamp(),
       })
-      setFormData({ name: "", email: "", subject: "", message: "" })
+    setFormData({ name: "", email: "", subject: "", message: "" })
       toast.success("Thank you for your message! We will get back to you soon.")
     } catch (err) {
       toast.error("Failed to send message. Please try again later.")

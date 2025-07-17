@@ -4,6 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingCart, Heart, Star } from "lucide-react"
 import { useState } from "react"
+import { useCart } from "../context/CartContext"
+import { useMetaTracking } from "../../hooks/useMetaTracking"
 
 interface Product {
   status: string
@@ -20,6 +22,30 @@ interface Product {
 
 export default function ProductCard({ product }: { product: Product }) {
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const { addToCart } = useCart()
+  const { trackAddToCart } = useMetaTracking()
+
+  const handleQuickAddToCart = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    try {
+      // Add to cart
+      addToCart(product, 1)
+
+      // Track the event
+      await trackAddToCart(
+        product.slug || product.productName,
+        product.productName,
+        Number.parseFloat(product.price),
+        1,
+      )
+
+      console.log("✅ Quick AddToCart event tracked successfully")
+    } catch (error) {
+      console.error("❌ Error tracking quick AddToCart event:", error)
+    }
+  }
 
   return (
     <div className="product-card group">
@@ -34,7 +60,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Overlay buttons */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-          <button className="bg-white text-gray-800 p-3 rounded-full hover:bg-green-500 hover:text-white transition-colors duration-300 transform hover:scale-110">
+        <button
+            onClick={handleQuickAddToCart}
+            className="bg-white text-gray-800 p-3 rounded-full hover:bg-green-500 hover:text-white transition-colors duration-300 transform hover:scale-110"
+            data-fb-skip-ogb="true" 
+          >
             <ShoppingCart size={20} />
           </button>
           <button
