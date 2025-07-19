@@ -8,15 +8,15 @@ import { collection, getDocs, query, where } from "firebase/firestore"
 import { db } from "../../../firebase"
 import ProductSection from "../../components/ProductSection"
 import { useCart } from "../../context/CartContext"
-import { useMetaTracking } from "../../../hooks/useMetaTracking" // Re-import useMetaTracking
+import { useMetaTracking } from "../../../hooks/useMetaTracking"
 import toast from "react-hot-toast"
 
 export default function ProductDetails() {
   const params = useParams()
   const router = useRouter()
   const { slug } = params
-  const { addToCart } = useCart()
-  const { trackViewContent, trackAddToCart } = useMetaTracking() // Use the hook
+  const { addToCart, cartItems } = useCart() // Destructure cartItems to calculate total for InitiateCheckout
+  const { trackViewContent, trackAddToCart, trackInitiateCheckout } = useMetaTracking() // Use the hook
 
   const [product, setProduct] = useState(null)
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -57,7 +57,7 @@ export default function ProductDetails() {
     }
 
     fetchProduct()
-  }, [slug, trackViewContent]) // trackViewContent is now memoized, so this effect won't loop
+  }, [slug, trackViewContent])
 
   // Fetch related products for the "You may also like" section
   useEffect(() => {
@@ -127,8 +127,16 @@ export default function ProductDetails() {
     // Add to cart first
     addToCart(product, quantity, selectedSize, selectedColor)
 
-    // Track add to cart event
-    trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
+    // Prepare data for InitiateCheckout
+    const productsForCheckout = [...cartItems, { ...product, quantity, selectedSize, selectedColor }].map((item) => ({
+      id: item.slug,
+      price: Number.parseFloat(item.price),
+      quantity: item.quantity,
+    }))
+    const totalValueForCheckout = productsForCheckout.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+    // Track initiate checkout event instead of AddToCart
+    trackInitiateCheckout(productsForCheckout, totalValueForCheckout)
 
     // Redirect to cart/checkout
     router.push("/cart")
@@ -320,7 +328,7 @@ export default function ProductDetails() {
                 onClick={handleAddToCart}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
                 data-testid="add-to-cart-button"
-                data-fb-skip-ogb="true" // Ensure this is present
+                data-fb-skip-ogb="true"
               >
                 <ShoppingCart size={20} />
                 Add to Cart
@@ -329,7 +337,7 @@ export default function ProductDetails() {
                 onClick={handleBuyNow}
                 className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
                 data-testid="buy-now-button"
-                data-fb-skip-ogb="true" // Ensure this is present
+                data-fb-skip-ogb="true"
               >
                 Buy Now
               </button>
