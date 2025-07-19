@@ -313,6 +313,8 @@ export default function ProductDetails() {
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+                data-testid="add-to-cart-button"
+                data-fb-skip-ogb="true"
               >
                 <ShoppingCart size={20} />
                 Add to Cart
@@ -320,6 +322,8 @@ export default function ProductDetails() {
               <button
                 onClick={handleBuyNow}
                 className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
+                data-testid="buy-now-button"
+                data-fb-skip-ogb="true"
               >
                 Buy Now
               </button>

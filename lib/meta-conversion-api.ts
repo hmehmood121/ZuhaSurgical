@@ -37,6 +37,10 @@ class MetaConversionAPI {
   constructor() {
     this.pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || ""
     this.accessToken = process.env.META_CONVERSION_API_TOKEN || ""
+
+    console.log("🔧 MetaConversionAPI initialized")
+    console.log("🔧 Pixel ID:", this.pixelId ? "✅ Set" : "❌ Missing")
+    console.log("🔧 Access Token:", this.accessToken ? "✅ Set" : "❌ Missing")
   }
 
   // Hash function for PII data
