@@ -324,7 +324,7 @@ class MetaConversionAPI {
     products: Array<{ id: string; price: number; quantity: number }>,
     totalValue: number,
   ): Promise<void> {
-    console.log("🛍️ trackInitiateCheckout called:", { products, totalValue })
+    console.log("🛍️ trackInitiateCheckout has called:", { products, totalValue })
     await this.sendEvent({
       event_name: "InitiateCheckout",
       custom_data: {
