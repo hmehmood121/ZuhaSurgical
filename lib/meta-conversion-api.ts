@@ -82,62 +82,6 @@ class MetaConversionAPI {
     return undefined
   }
 
-  // Send event to Meta Conversion API
-  async sendEvent(eventData: Partial<MetaEvent>, userEmail?: string, userPhone?: string): Promise<void> {
-    if (!this.pixelId || !this.accessToken) {
-      console.warn("Meta Conversion API: Missing pixel ID or access token")
-      return
-    }
-
-    try {
-      const userData: MetaEvent["user_data"] = {
-        client_ip_address: await this.getClientIP(),
-        client_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-        fbc: this.getFbc(),
-        fbp: this.getFbp(),
-      }
-
-      // Hash email and phone if provided
-      if (userEmail) {
-        userData.em = [await this.hashData(userEmail)]
-      }
-      if (userPhone) {
-        userData.ph = [await this.hashData(userPhone)]
-      }
-
-      const event: MetaEvent = {
-        event_name: eventData.event_name || "PageView",
-        event_time: Math.floor(Date.now() / 1000),
-        event_id: eventData.event_id || `${Date.now()}_${Math.random()}`,
-        user_data: userData,
-        custom_data: eventData.custom_data || {},
-        event_source_url: typeof window !== "undefined" ? window.location.href : undefined,
-        action_source: "website",
-        ...eventData,
-      }
-
-      const response = await fetch(`https://graph.facebook.com/${this.apiVersion}/${this.pixelId}/events`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: [event],
-          access_token: this.accessToken,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error("Meta Conversion API Error:", errorData)
-      } else {
-        console.log("Meta Conversion API: Event sent successfully", event.event_name)
-      }
-    } catch (error) {
-      console.error("Meta Conversion API: Failed to send event", error)
-    }
-  }
-
   // Get client IP (you might want to implement this server-side)
   private async getClientIP(): Promise<string | undefined> {
     try {
@@ -149,15 +93,158 @@ class MetaConversionAPI {
     }
   }
 
+  // Send event to Meta Conversion API
+  async sendEvent(eventData: Partial<MetaEvent>, userEmail?: string, userPhone?: string): Promise<void> {
+    console.log("🚀 sendEvent called with:", eventData.event_name)
+
+    if (!this.pixelId || !this.accessToken) {
+      console.warn("❌ Meta Conversion API: Missing pixel ID or access token. Skipping server-side event.")
+      console.warn("Pixel ID:", this.pixelId ? "Present" : "Missing")
+      console.warn("Access Token:", this.accessToken ? "Present" : "Missing")
+      // Still attempt to send to browser pixel if available
+    } else {
+      try {
+        console.log("📊 Building event data for Conversion API...")
+
+        const userData: MetaEvent["user_data"] = {
+          client_ip_address: await this.getClientIP(),
+          client_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+          fbc: this.getFbc(),
+          fbp: this.getFbp(),
+        }
+
+        console.log("👤 User data for Conversion API:", userData)
+
+        // Hash email and phone if provided
+        if (userEmail) {
+          userData.em = [await this.hashData(userEmail)]
+        }
+        if (userPhone) {
+          userData.ph = [await this.hashData(userPhone)]
+        }
+
+        const event: MetaEvent = {
+          event_name: eventData.event_name || "PageView",
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: eventData.event_id || `${eventData.event_name}_${Date.now()}_${Math.random()}`,
+          user_data: userData,
+          custom_data: eventData.custom_data || {},
+          event_source_url: typeof window !== "undefined" ? window.location.href : undefined,
+          action_source: "website",
+          ...eventData,
+        }
+
+        console.log("📤 Full Conversion API event payload:", JSON.stringify(event, null, 2))
+
+        // Send to Conversion API
+        console.log("📡 Sending to Conversion API...")
+        const response = await fetch(`https://graph.facebook.com/${this.apiVersion}/${this.pixelId}/events`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: [event],
+            access_token: this.accessToken,
+          }),
+        })
+
+        const responseData = await response.json()
+        console.log("📡 Conversion API response:", responseData)
+
+        if (!response.ok) {
+          console.error("❌ Meta Conversion API Error:", responseData)
+        } else {
+          console.log("✅ Meta Conversion API: Event sent successfully", {
+            event_name: event.event_name,
+            event_id: event.event_id,
+            custom_data: event.custom_data,
+          })
+        }
+      } catch (error) {
+        console.error("❌ Meta Conversion API: Failed to send event to server", error)
+      }
+    }
+
+    // Always attempt to send to browser pixel for better matching
+    console.log("📱 Checking browser pixel availability...")
+    if (typeof window !== "undefined" && window.fbq) {
+      console.log("📱 Browser pixel available, sending event:", eventData.event_name)
+
+      // Ensure custom_data is always an object
+      const customData = eventData.custom_data || {}
+
+      if (eventData.event_name === "PageView") {
+        window.fbq("track", "PageView")
+      } else if (eventData.event_name === "ViewContent") {
+        window.fbq("track", "ViewContent", {
+          content_type: customData.content_type,
+          content_ids: customData.content_ids,
+          content_name: customData.content_name,
+          content_category: customData.content_category,
+          currency: customData.currency,
+          value: customData.value,
+        })
+      } else if (eventData.event_name === "AddToCart") {
+        const addToCartData = {
+          content_type: customData.content_type,
+          content_ids: customData.content_ids,
+          content_name: customData.content_name,
+          currency: customData.currency,
+          value: customData.value,
+          contents: customData.contents,
+        }
+
+        console.log("🛒 Browser AddToCart data:", addToCartData)
+        window.fbq("track", "AddToCart", addToCartData)
+        console.log("✅ Browser pixel AddToCart sent")
+      } else if (eventData.event_name === "InitiateCheckout") {
+        window.fbq("track", "InitiateCheckout", {
+          content_type: customData.content_type,
+          content_ids: customData.content_ids,
+          currency: customData.currency,
+          value: customData.value,
+          num_items: customData.num_items,
+          contents: customData.contents,
+        })
+      } else if (eventData.event_name === "Purchase") {
+        window.fbq("track", "Purchase", {
+          content_type: customData.content_type,
+          content_ids: customData.content_ids,
+          currency: customData.currency,
+          value: customData.value,
+          num_items: customData.num_items,
+          contents: customData.contents,
+        })
+      } else if (eventData.event_name === "Search") {
+        window.fbq("track", "Search", {
+          search_string: customData.search_string,
+        })
+      } else if (eventData.event_name === "Lead") {
+        window.fbq("track", "Lead")
+      }
+
+      console.log("✅ Browser Pixel: Event sent", eventData.event_name)
+    } else {
+      console.warn("⚠️ Browser pixel (fbq) not available. Cannot send browser-side event.")
+      console.warn("window.fbq:", typeof window !== "undefined" ? typeof window.fbq : "window not available")
+    }
+  }
+
   // Predefined event methods
   async trackPageView(url?: string): Promise<void> {
+    console.log("📄 trackPageView called")
     await this.sendEvent({
       event_name: "PageView",
       event_source_url: url || (typeof window !== "undefined" ? window.location.href : undefined),
+      custom_data: {
+        currency: "PKR",
+      },
     })
   }
 
   async trackViewContent(productId: string, productName: string, category: string, price: number): Promise<void> {
+    console.log("👁️ trackViewContent called:", { productId, productName, category, price })
     await this.sendEvent({
       event_name: "ViewContent",
       custom_data: {
@@ -172,6 +259,7 @@ class MetaConversionAPI {
   }
 
   async trackAddToCart(productId: string, productName: string, price: number, quantity: number): Promise<void> {
+    console.log("🛒 trackAddToCart called:", { productId, productName, price, quantity })
     await this.sendEvent({
       event_name: "AddToCart",
       custom_data: {
@@ -198,9 +286,11 @@ class MetaConversionAPI {
     userEmail?: string,
     userPhone?: string,
   ): Promise<void> {
+    console.log("💰 trackPurchase called:", { orderId, totalValue, products })
     await this.sendEvent(
       {
         event_name: "Purchase",
+        event_id: `purchase_${orderId}`, // Unique event ID for deduplication
         custom_data: {
           content_type: "product",
           content_ids: products.map((p) => p.id),
@@ -220,10 +310,12 @@ class MetaConversionAPI {
   }
 
   async trackSearch(searchQuery: string): Promise<void> {
+    console.log("🔍 trackSearch called:", searchQuery)
     await this.sendEvent({
       event_name: "Search",
       custom_data: {
         search_string: searchQuery,
+        currency: "PKR",
       },
     })
   }
@@ -232,6 +324,7 @@ class MetaConversionAPI {
     products: Array<{ id: string; price: number; quantity: number }>,
     totalValue: number,
   ): Promise<void> {
+    console.log("🛍️ trackInitiateCheckout called:", { products, totalValue })
     await this.sendEvent({
       event_name: "InitiateCheckout",
       custom_data: {
@@ -250,13 +343,24 @@ class MetaConversionAPI {
   }
 
   async trackLead(userEmail?: string, userPhone?: string): Promise<void> {
+    console.log("📝 trackLead called:", { userEmail, userPhone })
     await this.sendEvent(
       {
         event_name: "Lead",
+        custom_data: {
+          currency: "PKR",
+        },
       },
       userEmail,
       userPhone,
     )
+  }
+}
+
+// Extend window object for TypeScript
+declare global {
+  interface Window {
+    fbq: any
   }
 }
 

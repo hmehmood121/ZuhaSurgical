@@ -1,21 +1,57 @@
 "use client"
 
-import { useEffect } from "react"
+// This file was missing in the revert, re-adding it with useCallback.
+import { useCallback } from "react"
 import { metaAPI } from "../lib/meta-conversion-api"
 
-export const useMetaTracking = () => {
-  // Track page view on mount
-  useEffect(() => {
-    metaAPI.trackPageView()
+export function useMetaTracking() {
+  const trackPageView = useCallback((url?: string) => {
+    metaAPI.trackPageView(url)
+  }, [])
+
+  const trackViewContent = useCallback((productId: string, productName: string, category: string, price: number) => {
+    metaAPI.trackViewContent(productId, productName, category, price)
+  }, [])
+
+  const trackAddToCart = useCallback((productId: string, productName: string, price: number, quantity: number) => {
+    metaAPI.trackAddToCart(productId, productName, price, quantity)
+  }, [])
+
+  const trackPurchase = useCallback(
+    (
+      orderId: string,
+      products: Array<{ id: string; name: string; price: number; quantity: number }>,
+      totalValue: number,
+      userEmail?: string,
+      userPhone?: string,
+    ) => {
+      metaAPI.trackPurchase(orderId, products, totalValue, userEmail, userPhone)
+    },
+    [],
+  )
+
+  const trackSearch = useCallback((searchQuery: string) => {
+    metaAPI.trackSearch(searchQuery)
+  }, [])
+
+  const trackInitiateCheckout = useCallback(
+    (products: Array<{ id: string; price: number; quantity: number }>, totalValue: number) => {
+      metaAPI.trackInitiateCheckout(products, totalValue)
+    },
+    [],
+  )
+
+  const trackLead = useCallback((userEmail?: string, userPhone?: string) => {
+    metaAPI.trackLead(userEmail, userPhone)
   }, [])
 
   return {
-    trackPageView: metaAPI.trackPageView.bind(metaAPI),
-    trackViewContent: metaAPI.trackViewContent.bind(metaAPI),
-    trackAddToCart: metaAPI.trackAddToCart.bind(metaAPI),
-    trackPurchase: metaAPI.trackPurchase.bind(metaAPI),
-    trackSearch: metaAPI.trackSearch.bind(metaAPI),
-    trackInitiateCheckout: metaAPI.trackInitiateCheckout.bind(metaAPI),
-    trackLead: metaAPI.trackLead.bind(metaAPI),
+    trackPageView,
+    trackViewContent,
+    trackAddToCart,
+    trackPurchase,
+    trackSearch,
+    trackInitiateCheckout,
+    trackLead,
   }
 }

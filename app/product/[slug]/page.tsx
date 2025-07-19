@@ -8,7 +8,7 @@ import { collection, getDocs, query, where } from "firebase/firestore"
 import { db } from "../../../firebase"
 import ProductSection from "../../components/ProductSection"
 import { useCart } from "../../context/CartContext"
-import { useMetaTracking } from "../../../hooks/useMetaTracking"
+import { useMetaTracking } from "../../../hooks/useMetaTracking" // Re-import useMetaTracking
 import toast from "react-hot-toast"
 
 export default function ProductDetails() {
@@ -16,7 +16,7 @@ export default function ProductDetails() {
   const router = useRouter()
   const { slug } = params
   const { addToCart } = useCart()
-  const { trackViewContent, trackAddToCart } = useMetaTracking()
+  const { trackViewContent, trackAddToCart } = useMetaTracking() // Use the hook
 
   const [product, setProduct] = useState(null)
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -57,7 +57,7 @@ export default function ProductDetails() {
     }
 
     fetchProduct()
-  }, [slug, trackViewContent])
+  }, [slug, trackViewContent]) // trackViewContent is now memoized, so this effect won't loop
 
   // Fetch related products for the "You may also like" section
   useEffect(() => {
@@ -106,7 +106,10 @@ export default function ProductDetails() {
     return true
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e) => {
+    e.preventDefault() // Prevent default button behavior
+    e.stopPropagation() // Stop event propagation to prevent other listeners
+
     if (!validateSelections()) return
 
     addToCart(product, quantity, selectedSize, selectedColor)
@@ -115,7 +118,10 @@ export default function ProductDetails() {
     trackAddToCart(product.slug, product.productName, Number.parseFloat(product.price), quantity)
   }
 
-  const handleBuyNow = () => {
+  const handleBuyNow = (e) => {
+    e.preventDefault() // Prevent default button behavior
+    e.stopPropagation() // Stop event propagation
+
     if (!validateSelections()) return
 
     // Add to cart first
@@ -314,7 +320,7 @@ export default function ProductDetails() {
                 onClick={handleAddToCart}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
                 data-testid="add-to-cart-button"
-                data-fb-skip-ogb="true"
+                data-fb-skip-ogb="true" // Ensure this is present
               >
                 <ShoppingCart size={20} />
                 Add to Cart
@@ -323,7 +329,7 @@ export default function ProductDetails() {
                 onClick={handleBuyNow}
                 className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
                 data-testid="buy-now-button"
-                data-fb-skip-ogb="true"
+                data-fb-skip-ogb="true" // Ensure this is present
               >
                 Buy Now
               </button>
