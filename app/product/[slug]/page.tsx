@@ -15,8 +15,8 @@ export default function ProductDetails() {
   const params = useParams()
   const router = useRouter()
   const { slug } = params
-  const { addToCart, cartItems } = useCart() // Destructure cartItems to calculate total for InitiateCheckout
-  const { trackViewContent, trackAddToCart, trackInitiateCheckout } = useMetaTracking() // Use the hook
+  const { addToCart, cartItems } = useCart()
+  const { trackViewContent, trackAddToCart, trackBuyNow } = useMetaTracking() // Import trackBuyNow
 
   const [product, setProduct] = useState(null)
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -127,16 +127,8 @@ export default function ProductDetails() {
     // Add to cart first
     addToCart(product, quantity, selectedSize, selectedColor)
 
-    // Prepare data for InitiateCheckout
-    const productsForCheckout = [...cartItems, { ...product, quantity, selectedSize, selectedColor }].map((item) => ({
-      id: item.slug,
-      price: Number.parseFloat(item.price),
-      quantity: item.quantity,
-    }))
-    const totalValueForCheckout = productsForCheckout.reduce((sum, item) => sum + item.price * item.quantity, 0)
-
-    // Track initiate checkout event instead of AddToCart
-    trackInitiateCheckout(productsForCheckout, totalValueForCheckout)
+    // Track custom "BuyNow" event
+    trackBuyNow(product.slug, product.productName, Number.parseFloat(product.price), quantity)
 
     // Redirect to cart/checkout
     router.push("/cart")

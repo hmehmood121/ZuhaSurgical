@@ -222,6 +222,19 @@ class MetaConversionAPI {
         })
       } else if (eventData.event_name === "Lead") {
         window.fbq("track", "Lead")
+      } else if (eventData.event_name === "BuyNow") {
+        // Handle custom BuyNow event
+        const buyNowData = {
+          content_type: customData.content_type,
+          content_ids: customData.content_ids,
+          content_name: customData.content_name,
+          currency: customData.currency,
+          value: customData.value,
+          contents: customData.contents,
+        }
+        console.log("⚡ Browser BuyNow data:", buyNowData)
+        window.fbq("trackCustom", "BuyNow", buyNowData) // Use trackCustom for custom events
+        console.log("✅ Browser pixel BuyNow sent")
       }
 
       console.log("✅ Browser Pixel: Event sent", eventData.event_name)
@@ -324,7 +337,7 @@ class MetaConversionAPI {
     products: Array<{ id: string; price: number; quantity: number }>,
     totalValue: number,
   ): Promise<void> {
-    console.log("🛍️ trackInitiateCheckout has called:", { products, totalValue })
+    console.log("🛍️ trackInitiateCheckout called:", { products, totalValue })
     await this.sendEvent({
       event_name: "InitiateCheckout",
       custom_data: {
@@ -354,6 +367,28 @@ class MetaConversionAPI {
       userEmail,
       userPhone,
     )
+  }
+
+  // New custom event for "Buy Now"
+  async trackBuyNow(productId: string, productName: string, price: number, quantity: number): Promise<void> {
+    console.log("⚡ trackBuyNow called:", { productId, productName, price, quantity })
+    await this.sendEvent({
+      event_name: "BuyNow", // Custom event name
+      custom_data: {
+        content_type: "product",
+        content_ids: [productId],
+        content_name: productName,
+        currency: "PKR",
+        value: price * quantity,
+        contents: [
+          {
+            id: productId,
+            quantity: quantity,
+            item_price: price,
+          },
+        ],
+      },
+    })
   }
 }
 

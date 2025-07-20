@@ -1,8 +1,7 @@
 "use client"
 
-// This file was missing in the revert, re-adding it with useCallback.
 import { useCallback } from "react"
-import { metaAPI } from "../lib/meta-conversion-api"
+import { metaAPI } from "@/lib/meta-conversion-api"
 
 export function useMetaTracking() {
   const trackPageView = useCallback((url?: string) => {
@@ -16,6 +15,13 @@ export function useMetaTracking() {
   const trackAddToCart = useCallback((productId: string, productName: string, price: number, quantity: number) => {
     metaAPI.trackAddToCart(productId, productName, price, quantity)
   }, [])
+
+  const trackInitiateCheckout = useCallback(
+    (products: Array<{ id: string; price: number; quantity: number }>, totalValue: number) => {
+      metaAPI.trackInitiateCheckout(products, totalValue)
+    },
+    [],
+  )
 
   const trackPurchase = useCallback(
     (
@@ -34,24 +40,22 @@ export function useMetaTracking() {
     metaAPI.trackSearch(searchQuery)
   }, [])
 
-  const trackInitiateCheckout = useCallback(
-    (products: Array<{ id: string; price: number; quantity: number }>, totalValue: number) => {
-      metaAPI.trackInitiateCheckout(products, totalValue)
-    },
-    [],
-  )
-
   const trackLead = useCallback((userEmail?: string, userPhone?: string) => {
     metaAPI.trackLead(userEmail, userPhone)
+  }, [])
+
+  const trackBuyNow = useCallback((productId: string, productName: string, price: number, quantity: number) => {
+    metaAPI.trackBuyNow(productId, productName, price, quantity)
   }, [])
 
   return {
     trackPageView,
     trackViewContent,
     trackAddToCart,
+    trackInitiateCheckout,
     trackPurchase,
     trackSearch,
-    trackInitiateCheckout,
     trackLead,
+    trackBuyNow, // Expose the new trackBuyNow event
   }
 }
